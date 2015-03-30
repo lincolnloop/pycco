@@ -189,6 +189,140 @@ body .vc { color: #19469D }                     /* Name.Variable.Class */
 body .vg { color: #19469D }                     /* Name.Variable.Global */
 body .vi { color: #19469D }                     /* Name.Variable.Instance */
 body .il { color: #666666 }                     /* Literal.Number.Integer.Long */
+
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#Page {
+  display: flex;
+  transform: translateX(-280px);
+  transition: transform .3s;
+  height: 100%;
+}
+
+#Page.open {
+  transform: translateX(0);
+}
+
+/* Resets and unborking */
+#container > .section .docs:first-of-type {
+  margin-bottom: 40px;
+}
+
+.clearall div.docs:first-of-type h1 {
+  margin-top: 0;
+}
+
+/* Navigation */
+#container {
+  margin-left: 280px;
+  padding-left: 2.6em;
+}
+
+#background {
+  left: calc(580px + 2.6em);
+}
+
+.docsnav {
+  z-index: 1;
+  position: fixed;
+  width: 280px;
+  height: 100%;
+  padding-top: 1em;
+  background: #292929;
+  font-size: 120%;
+}
+
+.docsnav-icon {
+  font-size: 150%;
+  font-weight: normal;
+  color: #669966;
+}
+
+.docsnav-tree {
+  padding-left: 0;
+}
+
+.docsnav-branch {
+  list-style: none;
+}
+
+/* Handle folders */
+.docsnav-folder {
+  font-weight: bold;
+}
+
+.docsnav-folder + .docsnav-tree {
+  margin-bottom: 1em;
+}
+
+.docsnav-folder + .docsnav-tree a {
+  font-size: 92.5%;
+  padding: .4em 1em;
+}
+
+/* All links */
+.docsnav a,
+.docsnav-toggler {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: .65em 1em;
+  border-bottom: 1px solid #393939;
+  font-family: 'Open Sans',sans-serif;
+  color: ghostwhite;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.docsnav-file:hover {
+  background: #373737;
+}
+
+.docsnav a:visited,
+.docsnav-toggler:visited {
+  color: white;
+}
+
+/* Exception to the all links rule */
+.docsnav-header .docsnav-upbtn {
+  align-items: baseline;
+  justify-content: initial;
+}
+
+.docsnav .docsnav-toggler {
+  border-bottom: none;
+}
+
+.docsnav-toggler {
+  z-index: 2;
+  position: fixed;
+  top: 80px;
+  left: 233px;
+
+  justify-content: center;
+
+  height: 2.6em;
+  width: 15vh;
+  min-width: 8em;
+
+  transform: rotate(90deg);
+
+  border: none;
+  background: #222;
+
+  font-size: 90%;
+  font-weight: bold;
+  text-transform: uppercase;
+  line-height: 1;
+  color: white;
+  cursor: pointer;
+}
 """
 
 html = """\
@@ -200,6 +334,28 @@ html = """\
   <link rel="stylesheet" href="{{ stylesheet }}">
 </head>
 <body>
+
+<div id="Page">
+<nav id="docsnav" class="docsnav">
+  <a href="#" class="docsnav-toggler" id="MenuToggler">Menu</a>
+
+  <header class="docsnav-header">
+    <!-- You may not need this -->
+    <a href="/" class="docsnav-folder docsnav-upbtn">
+      <span class="docsnav-icon">&#8593;</span>
+      TOP
+    </a>
+    <!--
+    <a href="#" class="docsnav-folder docsnav-upbtn">
+      <span class="docsnav-icon">&#11025;</span>
+      Projects
+    </a>
+    -->
+  </header>
+<ul class="docsnav-tree">
+    {{& tree}}
+</ul>
+</nav>
 <div id='container'>
   <div id="background"></div>
   {{#sources?}}
@@ -233,5 +389,22 @@ html = """\
   <div class='clearall'></div>
   {{/sections}}
 </div>
+</div>
+<script>
+(function() {
+  var toggler = document.getElementById('MenuToggler');
+  var page = document.getElementById('Page');
+
+  toggler.addEventListener('click', function(evt) {
+    evt.preventDefault();
+
+    if (page.getAttribute('class')) {
+      page.removeAttribute('class');
+    } else {
+      page.setAttribute('class', 'open');
+    }
+  });
+})();
+</script>
 </body>
 """

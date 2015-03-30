@@ -34,7 +34,7 @@ Or, to install the latest source
 # === Main Documentation Generation Functions ===
 
 def generate_documentation(source, outdir=None, preserve_paths=True,
-                           language=None):
+                           language=None, tree=None):
     """
     Generate the documentation for a source file by reading it in, splitting it
     up into comment/code sections, highlighting them for the appropriate
@@ -47,7 +47,7 @@ def generate_documentation(source, outdir=None, preserve_paths=True,
     language = get_language(source, code, language=language)
     sections = parse(source, code, language)
     highlight(source, sections, language, preserve_paths=preserve_paths, outdir=outdir)
-    return generate_html(source, sections, preserve_paths=preserve_paths, outdir=outdir)
+    return generate_html(source, sections, preserve_paths=preserve_paths, outdir=outdir, tree=tree)
 
 def parse(source, code, language):
     """
@@ -172,9 +172,9 @@ def preprocess(comment, section_nr, preserve_paths=True, outdir=None):
 
         else:
             return " [%s](%s)" % (match.group(1),
-                                  path.basename(destination(match.group(1),
+                                  destination(match.group(1),
                                                             preserve_paths=preserve_paths,
-                                                            outdir=outdir)))
+                                                            outdir=outdir))
 
     def replace_section_name(match):
         return '%(lvl)s <span id="%(id)s" href="%(id)s">%(name)s</span>' % {
@@ -223,7 +223,29 @@ def highlight(source, sections, language, preserve_paths=True, outdir=None):
 
 # === HTML Code generation ===
 
-def generate_html(source, sections, preserve_paths=True, outdir=None):
+def _render_tree(tree):
+    def recurse(node, path=''):
+        html = ""
+        for key, value in sorted(node.items()):
+
+            html += '<li class="docsnav-branch">'
+            if value:
+                html += """<a href="#" class="docsnav-folder">{}</a>
+                           <ul class="docsnav-tree">
+                           {}
+                           </ul>""".format(key,
+                                           recurse(value, '/'.join([path, key])))
+            else:
+                link = '/'.join([path, key.replace('.sls', '.html')])
+                html += """<a href="{link}" class="docsnav-file">
+                            {text}
+                           <span class="docsnav-icon">&#8594;</span>
+                           </a>""".format(link=link, text=key)
+            html += '</li>'
+        return html
+    return tree and recurse(tree) or None
+
+def generate_html(source, sections, preserve_paths=True, outdir=None, tree=None):
     """
     Once all of the code is finished highlighting, we can generate the HTML file
     and write out the documentation. Pass the completed sections into the
@@ -237,7 +259,8 @@ def generate_html(source, sections, preserve_paths=True, outdir=None):
 
     if not outdir:
         raise TypeError("Missing the required 'outdir' keyword argument")
-    title = path.basename(source)
+    #title = path.basename(source)
+    title = source
     dest = destination(source, preserve_paths=preserve_paths, outdir=outdir)
     csspath = path.relpath(path.join(outdir, "pycco.css"), path.split(dest)[0])
 
@@ -250,7 +273,8 @@ def generate_html(source, sections, preserve_paths=True, outdir=None):
         "sections"    : sections,
         "source"      : source,
         "path"        : path,
-        "destination" : destination
+        "destination" : destination,
+        "tree"        : _render_tree(tree),
     })
 
     return re.sub(r"__DOUBLE_OPEN_STACHE__", "{{", rendered).encode("utf-8")
@@ -309,6 +333,8 @@ languages = {
 
     ".hs": { "name": "haskell", "symbol": "--",
         "multistart": "{-", "multiend": "-}"},
+    ".sls": { "name": "sls", "symbol": "#",
+        "multistart": "{#", "multiend": "#}"},
 }
 
 # Build out the appropriate matchers and delimiters for each language.
@@ -397,6 +423,26 @@ highlight_start = "<div class=\"highlight\"><pre>"
 # The end of each Pygments highlight block.
 highlight_end = "</pre></div>"
 
+def _build_tree(paths):
+    def recurse(path, container):
+        segs = path.split('/')
+        head = segs[0]
+        tail = segs[1:]
+        if not tail:
+            container[head] = None
+        else:
+            if head not in container:
+                container[head] = {}
+            recurse('/'.join(tail), container[head])
+
+
+    container = {}
+    for path in paths:
+        if path.startswith('./'):
+            path = path[2:]
+        recurse(path, container)
+    return container
+
 def process(sources, preserve_paths=True, outdir=None, language=None):
     """For each source file passed as argument, generate the documentation."""
 
@@ -406,6 +452,7 @@ def process(sources, preserve_paths=True, outdir=None, language=None):
     # Make a copy of sources given on the command line. `main()` needs the
     # original list when monitoring for changed files.
     sources = sorted(sources)
+    tree = _build_tree(sources)
 
     # Proceed to generating the documentation.
     if sources:
@@ -424,8 +471,11 @@ def process(sources, preserve_paths=True, outdir=None, language=None):
                 pass
 
             with open(dest, "w") as f:
-                f.write(generate_documentation(s, preserve_paths=preserve_paths, outdir=outdir,
-                                               language=language))
+                f.write(generate_documentation(s,
+                                               preserve_paths=preserve_paths,
+                                               outdir=outdir,
+                                               language=language,
+                                               tree=tree))
 
             print "pycco = %s -> %s" % (s, dest)
 
