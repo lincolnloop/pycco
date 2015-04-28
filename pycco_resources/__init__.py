@@ -9,6 +9,9 @@ body {
   margin: 0; padding: 0;
   background: #f5f5ff;
 }
+body.no-code {
+    background: white;
+}
 a {
   color: #261a3b;
 }
@@ -29,6 +32,9 @@ h2, h3, h4, h5, h6 {
  }
 #container, div.section {
   position: relative;
+}
+.no-code #background {
+    display: none;
 }
 #background {
   position: absolute;
@@ -73,6 +79,10 @@ h2, h3, h4, h5, h6 {
         }
         #jump_page .source:first-child {
         }
+.no-code div.docs {
+    max-width: 600px;
+    min-width: 600px;
+}
 div.docs {
   float: left;
   max-width: 500px;
@@ -386,7 +396,7 @@ html = """\
   <title>{{ title }}</title>
   <link rel="stylesheet" href="{{ stylesheet }}">
 </head>
-<body>
+<body class="{{ page_class }}">
 
 <div id="Page">
 <nav id="docsnav" class="docsnav">
@@ -449,7 +459,9 @@ html = """\
       page = document.getElementById('Page'),
       content = document.getElementById('container'),
       folders = document.querySelectorAll('.docsnav-tree .docsnav-folder');
-
+  if (document.getElementsByTagName('BODY')[0].classList.contains('no-code')) {
+    page.setAttribute('data-state', 'open');
+  }
   toggler.addEventListener('click', function(evt) {
     evt.preventDefault();
 

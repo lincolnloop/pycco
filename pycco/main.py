@@ -236,7 +236,11 @@ def _render_tree(tree):
                            </ul>""".format(key,
                                            recurse(value, '/'.join([path, key])))
             else:
-                link = '/'.join([path, key.replace('.sls', '.html')])
+                if key.endswith('README.md'):
+                    link = path or '/'
+                else:
+                    html_file = '.'.join(key.split('.')[:-1]) + '.html'
+                    link = '/'.join([path, html_file])
                 html += """<a href="{link}" class="docsnav-file">
                             {text}
                            </a>""".format(link=link, text=key)
@@ -260,6 +264,9 @@ def generate_html(source, sections, preserve_paths=True, outdir=None, tree=None)
         raise TypeError("Missing the required 'outdir' keyword argument")
     #title = path.basename(source)
     title = source
+    if title.startswith('./'):
+        title = title[2:]
+    page_class = title.endswith('.md') and "no-code" or ""
     dest = destination(source, preserve_paths=preserve_paths, outdir=outdir)
     csspath = path.relpath(path.join(outdir, "pycco.css"), path.split(dest)[0])
 
@@ -268,6 +275,7 @@ def generate_html(source, sections, preserve_paths=True, outdir=None, tree=None)
 
     rendered = pycco_template({
         "title"       : title,
+        "page_class"  : page_class,
         "stylesheet"  : csspath,
         "sections"    : sections,
         "source"      : source,
@@ -334,6 +342,8 @@ languages = {
         "multistart": "{-", "multiend": "-}"},
     ".sls": { "name": "sls", "symbol": "#",
         "multistart": "{#", "multiend": "#}"},
+    ".md": { "name": "text", "symbol": "",
+        "multistart": "", "multiend": ""},
 }
 
 # Build out the appropriate matchers and delimiters for each language.
@@ -380,6 +390,8 @@ def destination(filepath, preserve_paths=True, outdir=None):
     """
 
     dirname, filename = path.split(filepath)
+    if filename == 'README.md':
+        filename = 'index.md'
     if not outdir:
         raise TypeError("Missing the required 'outdir' keyword argument.")
     try:
