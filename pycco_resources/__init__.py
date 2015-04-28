@@ -1,4 +1,5 @@
-css = """\
+# -*- coding: utf-8 -*-
+css = u"""\
 /*--------------------- Layout and Typography ----------------------------*/
 body {
   font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, FreeSerif, serif;
@@ -197,14 +198,19 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
   text-rendering: optimizeLegibility;
 }
 
+html,
+body,
 #Page {
-  display: flex;
-  transform: translateX(-280px);
-  transition: transform .3s;
-  height: 100%;
+  height: 100vh;
 }
 
-#Page.open {
+#Page {
+  transform: translateX(-400px);
+  transition: transform .3s;
+}
+
+#Page[data-state=open] {
+  overflow-x: hidden;
   transform: translateX(0);
 }
 
@@ -219,28 +225,34 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
 
 /* Navigation */
 #container {
-  margin-left: 280px;
-  padding-left: 2.6em;
+  box-sizing: content-box;
+  width: 500px;
+  padding-left: calc(400px + 2.6em);
 }
 
 #background {
-  left: calc(580px + 2.6em);
+  left: calc(500px + 400px + 2.6em);
+}
+
+div.code {
+  margin-left: 500px;
 }
 
 .docsnav {
+  position: absolute;
   z-index: 1;
-  position: fixed;
-  width: 280px;
+  width: 400px;
   height: 100%;
-  padding-top: 1em;
-  background: #292929;
   font-size: 120%;
 }
 
-.docsnav-icon {
-  font-size: 150%;
-  font-weight: normal;
-  color: #669966;
+.docsnav,
+.docsnav-tree {
+  background: #292929;
+}
+
+.docsnav-header {
+  padding-top: 1em;
 }
 
 .docsnav-tree {
@@ -249,6 +261,14 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
 
 .docsnav-branch {
   list-style: none;
+}
+
+.docsnav-branch .docsnav-tree {
+  display: none;
+}
+
+.docsnav-branch[data-state=open] > .docsnav-tree {
+  display: block;
 }
 
 /* Handle folders */
@@ -263,6 +283,19 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
 .docsnav-folder + .docsnav-tree a {
   font-size: 92.5%;
   padding: .4em 1em;
+}
+
+/* Poor man indentation */
+.docsnav-tree .docsnav-tree a {
+  padding-left: 2em;
+}
+
+.docsnav-tree .docsnav-tree .docsnav-tree a {
+  padding-left: 3em;
+}
+
+.docsnav-tree .docsnav-tree .docsnav-tree .docsnav-tree a {
+  padding-left: 4em;
 }
 
 /* All links */
@@ -284,6 +317,26 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
   background: #373737;
 }
 
+.docsnav-icon {
+  display: inline-block;
+}
+
+.docsnav-icon,
+.docsnav-file:after {
+  font-size: 150%;
+  font-weight: normal;
+  color: #669966;
+  content: "→";
+}
+
+.docsnav-file:after {
+  visibility: hidden;
+}
+
+.docsnav-file:hover:after {
+  visibility: visible;
+}
+
 .docsnav a:visited,
 .docsnav-toggler:visited {
   color: white;
@@ -301,9 +354,9 @@ body .il { color: #666666 }                     /* Literal.Number.Integer.Long *
 
 .docsnav-toggler {
   z-index: 2;
-  position: fixed;
+  position: absolute;
   top: 80px;
-  left: 233px;
+  left: 353px;
 
   justify-content: center;
 
@@ -392,18 +445,28 @@ html = """\
 </div>
 <script>
 (function() {
-  var toggler = document.getElementById('MenuToggler');
-  var page = document.getElementById('Page');
+  var toggler = document.getElementById('MenuToggler'),
+      page = document.getElementById('Page'),
+      content = document.getElementById('container'),
+      folders = document.querySelectorAll('.docsnav-tree .docsnav-folder');
 
   toggler.addEventListener('click', function(evt) {
     evt.preventDefault();
 
-    if (page.getAttribute('class')) {
-      page.removeAttribute('class');
-    } else {
-      page.setAttribute('class', 'open');
-    }
+    page.setAttribute('data-state', page.getAttribute('data-state') === 'open' ? 'closed' : 'open');
   });
+
+  for (var i = 0; i < folders.length; i++) {
+    folder = folders[i];
+
+    folder.addEventListener('click', function(evt) {
+      evt.preventDefault();
+
+      branch = this.parentNode;
+
+      branch.setAttribute('data-state', branch.getAttribute('data-state') === 'open' ? 'closed' : 'open');
+    });
+  }
 })();
 </script>
 </body>

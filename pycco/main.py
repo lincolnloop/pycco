@@ -239,7 +239,6 @@ def _render_tree(tree):
                 link = '/'.join([path, key.replace('.sls', '.html')])
                 html += """<a href="{link}" class="docsnav-file">
                             {text}
-                           <span class="docsnav-icon">&#8594;</span>
                            </a>""".format(link=link, text=key)
             html += '</li>'
         return html
@@ -458,7 +457,7 @@ def process(sources, preserve_paths=True, outdir=None, language=None):
     if sources:
         ensure_directory(outdir)
         css = open(path.join(outdir, "pycco.css"), "w")
-        css.write(pycco_styles)
+        css.write(pycco_styles.encode('utf-8'))
         css.close()
 
         def next_file():
